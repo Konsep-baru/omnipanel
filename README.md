@@ -1,7 +1,7 @@
-# OmniPanel versi simpel - Docker CLI Panel untuk VPS Kentang 🥔
+# OmniPanel versi simpel - Docker CLI Panel untuk Server Kentang 🥔
 
 Panel Docker super ringan yang jalan di terminal via SSH. 
-Cocok buat yang punya VPS RAM 2gb dan capek lihat panel web yang lemot.
+Cocok buat yang punya Server RAM 2gb dan capek lihat panel web yang lemot.
 
 ## ✨ Kenapa OmniPanel?
 
