@@ -25,7 +25,7 @@ Fitur Keterangan
 📥 INSTALASI (1 COMMAND)
 
 ```bash
-wget -O omnipanel-install.sh https://raw.githubusercontent.com/username/omnipanel/main/install.sh
+wget -O omnipanel-install.sh https://raw.githubusercontent.com/Konsep-baru/omnipanel/main/install.sh
 chmod +x omnipanel-install.sh
 sudo ./omnipanel-install.sh install
 ```
