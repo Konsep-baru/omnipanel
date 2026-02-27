@@ -1,0 +1,125 @@
+📋 DAFTAR PERINTAH DARI SCRIPT VERSI SIMPEL
+
+---
+
+🖥️ SYSTEM (4 perintah)
+
+```
+help        - Tampilkan bantuan semua perintah
+clear       - Bersihkan layar terminal
+exit        - Keluar dari panel OmniPanel
+version     - Lihat versi OmniPanel, Docker, dan IP server
+```
+
+📦 IMAGES (3 perintah)
+
+```
+image ls             - Lihat semua Docker images
+image pull <nama>    - Download image dari registry (contoh: image pull nginx)
+image rm <id>        - Hapus image berdasarkan ID (contoh: image rm abc123)
+```
+
+🐳 CONTAINERS (11 perintah)
+
+```
+container ls              - Lihat container yang sedang running
+container ls -a           - Lihat semua container (termasuk yang sudah stop)
+container run <image>     - Jalankan container baru dari image (auto-pull)
+                           Contoh: container run nginx:alpine
+                           
+container stop <nama>     - Stop container yang sedang running
+                           Contoh: container stop web
+                           
+container start <nama>    - Start container yang sedang stop
+                           Contoh: container start web
+                           
+container restart <nama>  - Restart container
+                           Contoh: container restart web
+                           
+container rm <nama>       - Hapus container
+                           Contoh: container rm web
+                           
+container logs <nama>     - Lihat 50 baris terakhir log container
+                           Contoh: container logs web
+                           
+container logs <nama> -f  - Follow log container (real-time)
+                           Contoh: container logs web -f
+                           
+container exec <nama> <cmd> - Jalankan perintah di dalam container
+                           Contoh: container exec web bash
+                           
+container stats           - Lihat statistik resource semua container
+```
+
+💾 VOLUMES (1 perintah)
+
+```
+volume ls        - Lihat semua Docker volumes
+```
+
+🌐 NETWORKS (1 perintah)
+
+```
+network ls       - Lihat semua Docker networks
+```
+
+📚 COMPOSE (5 perintah)
+
+```
+compose ls            - Lihat semua stack dengan statusnya
+compose create        - Buat stack baru (paste docker-compose.yml)
+compose start <nama>  - Start semua service dalam stack
+compose stop <nama>   - Stop semua service dalam stack
+compose logs <nama>   - Lihat log stack (bisa ditambah -f untuk follow)
+```
+
+🌍 DNS (1 perintah)
+
+```
+dns ls           - Lihat semua entri DNS (.lan domain)
+```
+
+---
+
+📊 RINGKASAN JUMLAH PERINTAH VERSI SIMPEL
+
+Kategori Jumlah Perintah
+System 4
+Images 3
+Containers 11
+Volumes 1
+Networks 1
+Compose 5
+DNS 1
+TOTAL 26 perintah
+
+---
+
+🎯 PERBANDINGAN DENGAN VERSI LENGKAP
+
+Fitur Versi Simpel (26) Versi Lengkap (41)
+Images ls, pull, rm + inspect, prune
+Containers ls, run, stop, start, restart, rm, logs, exec, stats + inspect, prune
+Volumes ls + inspect, prune, path
+Networks ls + inspect, prune
+Compose ls, create, start, stop, logs + restart, ps, exec, down
+System help, clear, exit, version Sama
+
+---
+
+📝 CARA MENGGUNAKAN
+
+```bash
+# Login ke panel
+ssh -p 4086 omnipanel@server-ip
+
+# Lihat semua perintah
+omni> help
+
+# Contoh penggunaan
+omni> image pull nginx
+omni> container run nginx:alpine
+omni> container ls
+omni> dns ls
+omni> exit
+```

@@ -1,0 +1,442 @@
+💡 CONTOH PENGGUNAAN OMNIPANEL V1.0
+
+---
+
+🚀 CONTOH 1: WEBSITE STATIS DENGAN NGINX
+
+Tujuan: Menjalankan website HTML sederhana
+
+```bash
+# 1. Login ke panel
+ssh -p 4086 omnipanel@192.168.1.100
+
+# 2. Pull image nginx
+omni> image pull nginx:alpine
+
+# 3. Jalankan container
+omni> container run nginx:alpine
+Container name (optional): website
+Port (e.g., 8080:80): 8080:80
+Run in background? [Y/n]: y
+Run this container? [Y/n]: y
+✓ Container created
+
+# 4. Buat file HTML di server (sebagai root di terminal lain)
+echo '<h1>Hello from OmniPanel!</h1>' > /tmp/index.html
+
+# 5. Copy file ke container
+docker cp /tmp/index.html website:/usr/share/nginx/html/
+
+# 6. Akses website
+# Browser: http://192.168.1.100:8080
+# Atau: http://website.lan:8080 (kalau DNS sudah di-set)
+
+# 7. Lihat log
+omni> container logs website
+
+# 8. Masuk ke container
+omni> container exec website sh
+/ # ls /usr/share/nginx/html/
+index.html
+/ # exit
+```
+
+---
+
+🗄️ CONTOH 2: DATABASE MYSQL
+
+Tujuan: Menjalankan MySQL dengan data persisten
+
+```bash
+# 1. Pull image mysql
+omni> image pull mysql:8
+
+# 2. Jalankan container MySQL
+# (catatan: script tidak support env variables, jadi harus via docker langsung)
+# Keluar dari panel dulu
+omni> exit
+
+# Jalankan docker langsung
+docker run -d \
+  --name mysql-db \
+  -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -e MYSQL_DATABASE=myapp \
+  -v mysql-data:/var/lib/mysql \
+  --restart unless-stopped \
+  mysql:8
+
+# 3. Login kembali ke panel
+ssh -p 4086 omnipanel@192.168.1.100
+
+# 4. Lihat container
+omni> container ls
+
+# 5. Masuk ke MySQL
+omni> container exec mysql-db mysql -u root -p
+Enter password: root123
+
+# Di dalam MySQL:
+mysql> SHOW DATABASES;
+mysql> USE myapp;
+mysql> CREATE TABLE users (id INT, name VARCHAR(100));
+mysql> INSERT INTO users VALUES (1, 'John Doe');
+mysql> SELECT * FROM users;
+mysql> EXIT;
+
+# 6. Lihat log
+omni> container logs mysql-db
+```
+
+---
+
+📝 CONTOH 3: WORDPRESS DENGAN DOCKER COMPOSE
+
+Tujuan: Menjalankan WordPress + MySQL dalam satu stack
+
+```bash
+# 1. Buat file docker-compose.yml di server
+# Sebagai root, buat file sementara
+cat > /tmp/wordpress.yml << 'EOF'
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8
+    container_name: wp-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppass
+    volumes:
+      - wp-db-data:/var/lib/mysql
+    restart: unless-stopped
+
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    container_name: wp-web
+    ports:
+      - "8081:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp-data:/var/www/html
+    restart: unless-stopped
+
+volumes:
+  wp-db-data:
+  wp-data:
+EOF
+
+# 2. Login ke panel
+ssh -p 4086 omnipanel@192.168.1.100
+
+# 3. Buat stack baru
+omni> compose create
+Stack name: wordpress
+Paste docker-compose.yml (Ctrl+D then Enter):
+# (copy paste isi /tmp/wordpress.yml)
+# Tekan Ctrl+D
+✓ Stack created
+
+Start now? [y/N]: y
+✓ Stack started
+
+# 4. Lihat status stack
+omni> compose ls
+📚 STACKS:
+  ● wordpress
+
+# 5. Lihat log
+omni> compose logs wordpress
+
+# 6. Akses WordPress
+# Browser: http://192.168.1.100:8081
+# Ikuti instalasi WordPress
+
+# 7. Lihat container dalam stack (via docker)
+# Keluar dari panel
+omni> exit
+docker ps | grep wp-
+```
+
+---
+
+🔗 CONTOH 4: MULTIPLE CONTAINER DENGAN NETWORK
+
+Tujuan: Membuat 2 container yang saling terhubung
+
+```bash
+# 1. Buat network khusus (via docker)
+# Keluar dari panel dulu
+omni> exit
+
+docker network create myapp-net
+
+# 2. Jalankan container database
+docker run -d \
+  --name app-db \
+  --network myapp-net \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  mysql:8
+
+# 3. Jalankan container aplikasi
+docker run -d \
+  --name app-web \
+  --network myapp-net \
+  -p 8082:80 \
+  nginx:alpine
+
+# 4. Login ke panel
+ssh -p 4086 omnipanel@192.168.1.100
+
+# 5. Lihat container
+omni> container ls
+
+# 6. Test koneksi antar container (via docker)
+# Keluar dari panel
+omni> exit
+
+docker exec app-web ping app-db
+# Harusnya berhasil!
+
+# 7. Lihat detail network
+docker network inspect myapp-net
+# Akan terlihat kedua container dalam network yang sama
+```
+
+---
+
+💾 CONTOH 5: BACKUP DAN RESTORE VOLUME
+
+Tujuan: Membackup data volume MySQL
+
+```bash
+# 1. Buat container MySQL dengan volume
+docker run -d \
+  --name db-backup \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -v mysql-backup-data:/var/lib/mysql \
+  mysql:8
+
+# 2. Isi data (contoh)
+docker exec -it db-backup mysql -u root -p
+# (masuk, buat database, tabel, isi data)
+
+# 3. Backup volume
+# Buat folder backup
+mkdir -p /root/backups
+
+# Backup dengan container temporary
+docker run --rm \
+  -v mysql-backup-data:/data \
+  -v /root/backups:/backup \
+  alpine \
+  tar czf /backup/mysql-backup-$(date +%Y%m%d).tar.gz -C /data .
+
+# 4. Lihat hasil backup
+ls -la /root/backups/
+
+# 5. Simulasikan kehilangan data
+docker stop db-backup
+docker rm db-backup
+docker volume rm mysql-backup-data
+
+# 6. Restore backup
+# Buat volume baru
+docker volume create mysql-backup-data
+
+# Restore data
+docker run --rm \
+  -v mysql-backup-data:/data \
+  -v /root/backups:/backup \
+  alpine \
+  tar xzf /backup/mysql-backup-20250227.tar.gz -C /data
+
+# 7. Jalankan container baru dengan volume yang sudah direstore
+docker run -d \
+  --name db-restored \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -v mysql-backup-data:/var/lib/mysql \
+  mysql:8
+
+# 8. Cek data masih ada
+docker exec db-restored mysql -u root -p -e "SHOW DATABASES;"
+```
+
+---
+
+🐍 CONTOH 6: APLIKASI PYTHON SEDERHANA
+
+Tujuan: Menjalankan aplikasi Flask sederhana
+
+```bash
+# 1. Buat aplikasi Flask di server
+mkdir -p /root/myapp
+
+cat > /root/myapp/app.py << 'EOF'
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return '<h1>Hello from OmniPanel!</h1><p>This is a Flask app in Docker.</p>'
+EOF
+
+echo "flask==2.3.3" > /root/myapp/requirements.txt
+
+cat > /root/myapp/Dockerfile << 'EOF'
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY app.py .
+CMD ["python", "app.py"]
+EOF
+
+# 2. Build image
+cd /root/myapp
+docker build -t my-flask-app .
+
+# 3. Login ke panel
+ssh -p 4086 omnipanel@192.168.1.100
+
+# 4. Jalankan container (image sudah ada)
+omni> container run my-flask-app
+Container name: flask-app
+Port (e.g., 8080:80): 5000:5000
+Run in background? [Y/n]: y
+✓ Container created
+
+# 5. Cek container
+omni> container ls
+
+# 6. Akses aplikasi
+# Browser: http://192.168.1.100:5000
+
+# 7. Lihat log
+omni> container logs flask-app
+```
+
+---
+
+🧹 CONTOH 7: CLEAN UP DISK
+
+Tujuan: Membersihkan resource yang tidak terpakai
+
+```bash
+# 1. Lihat semua container (termasuk yang sudah stop)
+omni> container ls -a
+
+# 2. Hapus container yang sudah stop (via docker)
+# Keluar dari panel
+omni> exit
+
+docker container prune
+
+# Atau hapus manual
+docker rm container1 container2
+
+# 3. Lihat semua image (via panel)
+ssh -p 4086 omnipanel@192.168.1.100
+omni> image ls
+
+# 4. Hapus image yang tidak dipakai (via docker)
+# Keluar dari panel
+exit
+docker image prune
+
+# Atau hapus semua image yang tidak dipakai
+docker image prune -a
+
+# 5. Lihat semua volume
+docker volume ls
+
+# 6. Hapus volume yang tidak dipakai
+docker volume prune
+
+# 7. Bersihkan semua (container, image, volume)
+docker system prune -a --volumes
+
+# 8. Cek penggunaan disk
+docker system df
+```
+
+---
+
+📊 RINGKASAN PERINTAH YANG TERSEDIA DI PANEL
+
+Kategori Perintah Fungsi
+System help Tampilkan bantuan
+ clear Bersihkan layar
+ exit Keluar panel
+ version Lihat versi
+Images image ls List images
+ image pull Pull image
+ image rm Hapus image
+Containers container ls List containers
+ container run Jalankan container
+ container stop Stop container
+ container start Start container
+ container restart Restart container
+ container rm Hapus container
+ container logs Lihat log
+ container exec Masuk container
+ container stats Lihat statistik
+Volumes volume ls List volumes
+Networks network ls List networks
+Compose compose ls List stacks
+ compose create Buat stack
+ compose start Start stack
+ compose stop Stop stack
+ compose logs Lihat log stack
+DNS dns ls List DNS entries
+
+---
+
+🎯 CONTOH WORKFLOW LENGKAP
+
+```bash
+# 1. Install panel
+sudo bash install.sh
+
+# 2. Login
+ssh -p 4086 omnipanel@192.168.1.100
+
+# 3. Pull image
+omni> image pull nginx:alpine
+
+# 4. Run container
+omni> container run nginx:alpine
+# (isi nama: web, port: 8080:80)
+
+# 5. Lihat status
+omni> container ls
+omni> dns ls
+
+# 6. Lihat log
+omni> container logs web
+
+# 7. Masuk ke container
+omni> container exec web sh
+
+# 8. Keluar dari container
+exit
+
+# 9. Stop container
+omni> container stop web
+
+# 10. Hapus container
+omni> container rm web
+
+# 11. Keluar panel
+omni> exit
+```
+
+Selamat mencoba! 😊
