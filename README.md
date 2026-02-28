@@ -1,6 +1,6 @@
-📘 README OMNIPANEL V1.0 - SIMPLE EDITION
+📘 OMNIPANEL docker management V1.0 - Simple Version 
 
-🚀 OmniPanel Simple Edition - Docker Management dengan Resource Limit
+🚀 OmniPanel Docker Aanagement - Simple Version dengan Resource Limit
 
 Panel Docker super ringan dengan batasan resource untuk menjaga performa. Cocok untuk belajar Docker, VPS terbatas, dan homelab. Hanya support Debian/Ubuntu!
 
