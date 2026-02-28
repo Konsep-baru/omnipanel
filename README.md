@@ -343,8 +343,7 @@ sudo systemctl status sshd
 
 OS Versi Status
 Ubuntu 20.04, 22.04, 24.04 ✅ Support
-Debian 11, 12 ✅ Support
-OS Lain Fedora, RHEL, CentOS ❌ Tidak support
+Debian 11, 12
 
 ---
 
